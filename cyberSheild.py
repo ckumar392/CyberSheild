@@ -11,10 +11,9 @@
 # Usage      : python3 CyberSheild_scan.py example.com
 # Description: This scanner automates the process of security scanning by using a
 #              multitude of available linux security tools and some custom scripts.
-#
-
 
 # Importing the librarie
+import ipaddress
 import sys
 import argparse
 import subprocess
@@ -24,6 +23,7 @@ import random
 import threading
 import re
 import random
+from urllib.parse import urlparse
 from urllib.parse import urlsplit
 
 
@@ -36,6 +36,26 @@ intervals = (
     ('m', 60),
     ('s', 1),
     )
+
+def is_valid_ip(address):
+    try:
+        ipaddress.ip_address(address)
+        return True
+    except ValueError as e:
+        print(f"Error: {e}")
+        return False
+
+def is_valid_url(url):
+    parsed_url = urlparse(url)
+    return bool(parsed_url.scheme) and bool(parsed_url.netloc)
+    
+def ping_url(url):
+    parsed_url = urlparse(url)
+    hostname = parsed_url.netloc.split(':')[0]  # Extract hostname from URL
+    # Ping the hostname
+    result = subprocess.run(['ping', '-c', '1', hostname], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return result.returncode == 0
+
 def display_time(seconds, granularity=3):
     result = []
     seconds = seconds + 1
@@ -129,19 +149,19 @@ def vul_remed_info(v1,v2,v3):
     print("\t"+bcolors.OKGREEN+str(tools_fix[v3-1][2])+bcolors.ENDC)
 
 
-# Xploitfree Help Context
+# CyberSheild Help Context
 def helper():
         print(bcolors.OKBLUE+"Information:"+bcolors.ENDC)
         print("------------")
-        print("\t./xploitfree.py example.com: Scans the domain example.com.")
-        print("\t./xploitfree.py example.com --skip dmitry --skip theHarvester: Skip the 'dmitry' and 'theHarvester' tests.")
-        print("\t./xploitfree.py example.com --nospinner: Disable the idle loader/spinner.")
-        print("\t./xploitfree.py --update   : Updates the scanner to the latest version.")
-        print("\t./xploitfree.py --help     : Displays this help context.")
+        print("\t./cyberSheild.py example.com: Scans the domain example.com.")
+        print("\t./cyberSheild.py example.com --skip dmitry --skip theHarvester: Skip the 'dmitry' and 'theHarvester' tests.")
+        print("\t./cyberSheild.py example.com --nospinner: Disable the idle loader/spinner.")
+        print("\t./cyberSheild.py --update   : Updates the scanner to the latest version.")
+        print("\t./cyberSheild.py --help     : Displays this help context.")
         print(bcolors.OKBLUE+"Interactive:"+bcolors.ENDC)
         print("------------")
         print("\tCtrl+C: Skips current test.")
-        print("\tCtrl+Z: Quits xploitfree.")
+        print("\tCtrl+Z: Quits cyberSheild.")
         print(bcolors.OKBLUE+"Legends:"+bcolors.ENDC)
         print("--------")
         print("\t["+proc_high+"]: Scan process may take longer times (not predictable).")
@@ -212,7 +232,7 @@ class Spinner:
                     sys.stdout.flush()
 
         except (KeyboardInterrupt, SystemExit):
-            print("\n\t"+ bcolors.BG_ERR_TXT+"Xploitfree received a series of Ctrl+C hits. Quitting..." +bcolors.ENDC)
+            print("\n\t"+ bcolors.BG_ERR_TXT+"CyberSheild received a series of Ctrl+C hits. Quitting..." +bcolors.ENDC)
             sys.exit(1)
 
     def start(self):
@@ -227,7 +247,7 @@ class Spinner:
             self.busy = False
             time.sleep(self.delay)
         except (KeyboardInterrupt, SystemExit):
-            print("\n\t"+ bcolors.BG_ERR_TXT+"Xploitfree received a series of Ctrl+C hits. Quitting..." +bcolors.ENDC)
+            print("\n\t"+ bcolors.BG_ERR_TXT+"CyberSheild received a series of Ctrl+C hits. Quitting..." +bcolors.ENDC)
             sys.exit(1)
 
 # End ofloader/spinner class
@@ -1294,7 +1314,7 @@ tools_fix = [
                     [29, "SSL related vulnerabilities breaks the confidentiality factor. An attacker may perform a MiTM attack, intrepret and eavesdrop the communication.",
                             "Proper implementation and upgraded version of SSL and TLS libraries are very critical when it comes to blocking SSL related vulnerabilities."],
                     [30, "Particular Scanner found multiple vulnerabilities that an attacker may try to exploit the target.",
-                            "Refer to xp-Vulnerability-Report to view the complete information of the vulnerability, once the scan gets completed."],
+                            "Refer to Sheild-Vulnerability-Report to view the complete information of the vulnerability, once the scan gets completed."],
                     [31, "Attackers may gather more information from subdomains relating to the parent domain. Attackers may even find other services from the subdomains and try to learn the architecture of the target. There are even chances for the attacker to find vulnerabilities as the attack surface gets larger with more subdomains discovered.",
                             "It is sometimes wise to block sub domains like development, staging to the outside world, as it gives more information to the attacker about the tech stack. Complex naming practices also help in reducing the attack surface as attackers find hard to perform subdomain bruteforcing through dictionaries and wordlists."],
                     [32, "Through this deprecated protocol, an attacker may be able to perform MiTM and other complicated attacks.",
@@ -1350,7 +1370,7 @@ def get_parser():
     parser.add_argument('-h', '--help', action='store_true', 
                         help='Show help message and exit.')
     parser.add_argument('-u', '--update', action='store_true', 
-                        help='Update Xploitfree.')
+                        help='Update CyberSheild.')
     parser.add_argument('-s', '--skip', action='append', default=[],
                         help='Skip some tools', choices=[t[0] for t in tools_precheck])
     parser.add_argument('-n', '--nospinner', action='store_true', 
@@ -1411,7 +1431,7 @@ if args_namespace.help or (not args_namespace.update \
     helper()
 elif args_namespace.update:
     logo()
-    print("Xploitfree is updating....Please wait.\n")
+    print("CyberSheild is updating....Please wait.\n")
     spinner.start()
     # Checking internet connectivity first...
     xp_internet_availability = check_internet()
@@ -1419,18 +1439,18 @@ elif args_namespace.update:
         print("\t"+ bcolors.BG_ERR_TXT + "There seems to be some problem connecting to the internet. Please try again or later." +bcolors.ENDC)
         spinner.stop()
         sys.exit(1)
-    cmd = 'sha1sum Xploitfree.py | grep .... | cut -c 1-40'
+    cmd = 'sha1sum cybersheild.py | grep .... | cut -c 1-40'
     oldversion_hash = subprocess.check_output(cmd, shell=True)
     oldversion_hash = oldversion_hash.strip()
-    os.system('wget -N https://raw.githubusercontent.com/skavngr/Xploitfree/master/Xploitfree.py -O Xploitfree.py > /dev/null 2>&1')
+    os.system('wget -N https://raw.githubusercontent.com/skavngr/CyberSheild/master/cybersheild.py -O cybersheild.py > /dev/null 2>&1')
     newversion_hash = subprocess.check_output(cmd, shell=True)
     newversion_hash = newversion_hash.strip()
     if oldversion_hash == newversion_hash :
         clear()
-        print("\t"+ bcolors.OKBLUE +"You already have the latest version of Xploitfree." + bcolors.ENDC)
+        print("\t"+ bcolors.OKBLUE +"You already have the latest version of CyberSheild." + bcolors.ENDC)
     else:
         clear()
-        print("\t"+ bcolors.OKGREEN +"Xploitfree successfully updated to the latest version." +bcolors.ENDC)
+        print("\t"+ bcolors.OKGREEN +"CyberSheild successfully updated to the latest version." +bcolors.ENDC)
     spinner.stop()
     sys.exit(1)
 
@@ -1446,6 +1466,23 @@ elif args_namespace.target:
 
     unavail_tools_names = list()
 
+    if len(sys.argv) != 2:
+        print("Usage: python3 cybersheild.py <url>")
+        sys.exit(1)
+
+    url = sys.argv[1]
+    if not is_valid_url(url):
+        print(f"Error: {url} is not a valid URL")
+        sys.exit(2)
+    print(f"{url} is a valid URL, now checking by pinging it.")
+
+    if not ping_url(url):
+        print(f"Error: Unable to ping {url}.")
+        print("Usage: python3 cybersheild.py <url>")
+        sys.exit(2)
+
+    print(f"{url} is a valid URL and is pingable.\n ##TESTING STARTED")
+
     while (xp_avail_tools < len(tools_precheck)):
         precmd = str(tools_precheck[xp_avail_tools][arg1])
         try:
@@ -1453,7 +1490,7 @@ elif args_namespace.target:
             output, err = p.communicate()
             val = output + err
         except:
-            print("\t"+bcolors.BG_ERR_TXT+"Xploitfree was terminated abruptly..."+bcolors.ENDC)
+            print("\t"+bcolors.BG_ERR_TXT+"CyberSheild was terminated abruptly..."+bcolors.ENDC)
             sys.exit(1)
         
         # If the tool is not found or it's part of the --skip argument(s), disabling it
@@ -1474,9 +1511,9 @@ elif args_namespace.target:
         clear()
     unavail_tools_names = list(set(unavail_tools_names))
     if len(unavail_tools_names) == 0:
-        print("\t"+bcolors.OKGREEN+"All Scanning Tools are available. Complete vulnerability checks will be performed by Xploitfree."+bcolors.ENDC)
+        print("\t"+bcolors.OKGREEN+"All Scanning Tools are available. Complete vulnerability checks will be performed by CyberSheild."+bcolors.ENDC)
     else:
-        print("\t"+bcolors.WARNING+"Some of these tools "+bcolors.BADFAIL+str(unavail_tools_names)+bcolors.ENDC+bcolors.WARNING+" are unavailable or will be skipped. Xploitfree will still perform the rest of the tests. Install these tools to fully utilize the functionality of Xploitfree."+bcolors.ENDC)
+        print("\t"+bcolors.WARNING+"Some of these tools "+bcolors.BADFAIL+str(unavail_tools_names)+bcolors.ENDC+bcolors.WARNING+" are unavailable or will be skipped. CyberSheild will still perform the rest of the tests. Install these tools to fully utilize the functionality of CyberSheild."+bcolors.ENDC)
     print(bcolors.BG_ENDL_TXT+"[ Checking Available Security Scanning Tools Phase... Completed. ]"+bcolors.ENDC)
     print("\n")
     print(bcolors.BG_HEAD_TXT+"[ Preliminary Scan Phase Initiated... Loaded "+str(tool_checks)+" vulnerability checks. ]"+bcolors.ENDC)
@@ -1536,7 +1573,7 @@ elif args_namespace.target:
                 sys.stdout.write(ERASE_LINE)
                 #print("-" * terminal_size(), end='\r', flush=True)
                 print(bcolors.OKBLUE+"\nScan Interrupted in "+display_time(int(elapsed))+bcolors.ENDC, end='\r', flush=True)
-                print("\n"+bcolors.WARNING + "\tTest Skipped. Performing Next. Press Ctrl+Z to Quit Xploitfree.\n" + bcolors.ENDC)
+                print("\n"+bcolors.WARNING + "\tTest Skipped. Performing Next. Press Ctrl+Z to Quit CyberSheild.\n" + bcolors.ENDC)
                 xp_skipped_checks = xp_skipped_checks + 1
 
         tool=tool+1
@@ -1549,7 +1586,7 @@ elif args_namespace.target:
     if len(xp_vul_list)==0:
         print("\t"+bcolors.OKGREEN+"No Vulnerabilities Detected."+bcolors.ENDC)
     else:
-        with open("xp-Vulnerability-Report", "a") as report:
+        with open("Sheild-Vulnerability-Report.txt", "a") as report:
             while(xp_vul < len(xp_vul_list)):
                 vuln_info = xp_vul_list[xp_vul].split('*')
                 report.write(vuln_info[arg2])
@@ -1562,12 +1599,12 @@ elif args_namespace.target:
                 temp_report.close()
                 xp_vul = xp_vul + 1
 
-            print("\tComplete Vulnerability Report for "+bcolors.OKBLUE+target+bcolors.ENDC+" named "+bcolors.OKGREEN+"`xp-Vulnerability-Report`"+bcolors.ENDC+" is available under the same directory Xploitfree resides.")
+            print("\tComplete Vulnerability Report for "+bcolors.OKBLUE+target+bcolors.ENDC+" named "+bcolors.OKGREEN+"`Sheild-Vulnerability-Report`"+bcolors.ENDC+" is available under the same directory CyberSheild resides.")
 
         report.close()
     # Writing all scan files output into xp-Debug-ScanLog for debugging purposes.
     for file_index, file_name in enumerate(tool_names):
-        with open("xp-Debug-ScanLog", "a") as report:
+        with open("Sheild-Debug-ScanLog.txt", "a") as report:
             try:
                 with open("/tmp/temp_"+file_name[arg1], 'r') as temp_report:
                         data = temp_report.read()
